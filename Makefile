@@ -1,0 +1,2 @@
+migrate:
+	php artisan migrate
