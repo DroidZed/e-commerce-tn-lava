@@ -1,44 +1,51 @@
 <?php
 
 use App\Models\User;
-use Livewire\Volt\Volt;
 
 test('profile page is displayed', function () {
-    $this->actingAs($user = User::factory()->create());
+    $user = User::factory()->create();
 
-    $this->get('/settings/profile')->assertOk();
+    $response = $this
+        ->actingAs($user)
+        ->get('/settings/profile');
+
+    $response->assertOk();
 });
 
 test('profile information can be updated', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user);
+    $response = $this
+        ->actingAs($user)
+        ->patch('/settings/profile', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
 
-    $response = Volt::test('settings.profile')
-        ->set('name', 'Test User')
-        ->set('email', 'test@example.com')
-        ->call('updateProfileInformation');
-
-    $response->assertHasNoErrors();
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertRedirect('/settings/profile');
 
     $user->refresh();
 
-    expect($user->name)->toEqual('Test User');
-    expect($user->email)->toEqual('test@example.com');
+    expect($user->name)->toBe('Test User');
+    expect($user->email)->toBe('test@example.com');
     expect($user->email_verified_at)->toBeNull();
 });
 
-test('email verification status is unchanged when email address is unchanged', function () {
+test('email verification status is unchanged when the email address is unchanged', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user);
+    $response = $this
+        ->actingAs($user)
+        ->patch('/settings/profile', [
+            'name' => 'Test User',
+            'email' => $user->email,
+        ]);
 
-    $response = Volt::test('settings.profile')
-        ->set('name', 'Test User')
-        ->set('email', $user->email)
-        ->call('updateProfileInformation');
-
-    $response->assertHasNoErrors();
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertRedirect('/settings/profile');
 
     expect($user->refresh()->email_verified_at)->not->toBeNull();
 });
@@ -46,30 +53,33 @@ test('email verification status is unchanged when email address is unchanged', f
 test('user can delete their account', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user);
-
-    $response = Volt::test('settings.delete-user-form')
-        ->set('password', 'password')
-        ->call('deleteUser');
+    $response = $this
+        ->actingAs($user)
+        ->delete('/settings/profile', [
+            'password' => 'password',
+        ]);
 
     $response
-        ->assertHasNoErrors()
+        ->assertSessionHasNoErrors()
         ->assertRedirect('/');
 
+    $this->assertGuest();
     expect($user->fresh())->toBeNull();
-    expect(auth()->check())->toBeFalse();
 });
 
 test('correct password must be provided to delete account', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user);
+    $response = $this
+        ->actingAs($user)
+        ->from('/settings/profile')
+        ->delete('/settings/profile', [
+            'password' => 'wrong-password',
+        ]);
 
-    $response = Volt::test('settings.delete-user-form')
-        ->set('password', 'wrong-password')
-        ->call('deleteUser');
-
-    $response->assertHasErrors(['password']);
+    $response
+        ->assertSessionHasErrors('password')
+        ->assertRedirect('/settings/profile');
 
     expect($user->fresh())->not->toBeNull();
 });

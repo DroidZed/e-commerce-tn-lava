@@ -1,4 +1,6 @@
 * text=auto eol=lf
+*.{cmd,[cC][mM][dD]} text eol=crlf
+*.{bat,[bB][aA][tT]} text eol=crlf
 
 *.blade.php diff=html
 *.css diff=css
@@ -7,4 +9,4 @@
 *.php diff=php
 
 CHANGELOG.md export-ignore
-README.md.md export-ignore
+README.md export-ignore
