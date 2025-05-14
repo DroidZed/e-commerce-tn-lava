@@ -94,6 +94,13 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                         Log in
                     </Button>
+
+
+                    <Button type="button" className="w-full" tabIndex={4}>
+                        <a href={route('keycloak.redirect')}>
+                        SSO Login
+                        </a>
+                    </Button>
                 </div>
 
                 <div className="text-muted-foreground text-center text-sm">
